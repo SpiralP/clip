@@ -12,6 +12,8 @@
 #include <memory>
 #include <string>
 
+#define CLIP_PATH_LENGTH 1024
+
 namespace clip {
 
   // ======================================================================
@@ -23,6 +25,19 @@ namespace clip {
 
   class image;
   struct image_spec;
+
+
+  struct path {
+    bool wide;
+
+    size_t length;
+
+    // either CHAR or WCHAR depending on `wide`
+    union {
+      wchar_t wide[CLIP_PATH_LENGTH];
+      char ansi[CLIP_PATH_LENGTH];
+    } buf;
+  };
 
   class lock {
   public:
@@ -55,6 +70,8 @@ namespace clip {
     bool set_image(const image& image);
     bool get_image(image& image) const;
     bool get_image_spec(image_spec& spec) const;
+
+    size_t get_paths(path* paths, const size_t& paths_len) const;
 
   private:
     class impl;
@@ -162,6 +179,9 @@ namespace clip {
   bool set_image(const image& img);
   bool get_image(image& img);
   bool get_image_spec(image_spec& spec);
+
+  // Get array of paths that are on the clipboard from the file explorer
+  size_t get_paths(path* paths, const size_t& paths_len);
 
   // ======================================================================
   // Platform-specific

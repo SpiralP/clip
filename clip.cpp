@@ -68,6 +68,10 @@ bool lock::get_image_spec(image_spec& spec) const {
   return p->get_image_spec(spec);
 }
 
+size_t lock::get_paths(path* paths, const size_t& paths_len) const {
+  return p->get_paths(paths, paths_len);
+}
+
 format empty_format() { return 0; }
 format text_format()  { return 1; }
 format image_format() { return 2; }
@@ -152,6 +156,15 @@ bool get_image_spec(image_spec& spec) {
     return false;
 
   return l.get_image_spec(spec);
+}
+
+size_t get_paths(path* paths, const size_t& paths_len) {
+  lock l;
+  if (!l.locked()) {
+    return 0;
+  }
+
+  return l.get_paths(paths, paths_len);
 }
 
 void set_error_handler(error_handler handler) {

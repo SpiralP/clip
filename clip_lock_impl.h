@@ -23,6 +23,7 @@ public:
   bool set_image(const image& image);
   bool get_image(image& image) const;
   bool get_image_spec(image_spec& spec) const;
+  size_t get_paths(path* paths, const size_t& paths_len) const;
 
 private:
   bool m_locked;

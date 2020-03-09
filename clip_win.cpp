@@ -8,6 +8,8 @@
 #include "clip_common.h"
 #include "clip_lock_impl.h"
 
+#include <Shlobj.h>
+#include <string.h>
 #include <cassert>
 #include <vector>
 #include <windows.h>
@@ -534,6 +536,88 @@ bool lock::impl::get_image_spec(image_spec& spec) const {
   }
 
   return true;
+}
+
+size_t lock::impl::get_paths(path* paths, const size_t& paths_len) const {
+  assert(paths);
+
+  size_t result = 0;
+
+  if (paths && is_convertible(CF_HDROP)) {
+    HDROP clipboard_data_handle =
+        static_cast<HDROP>(GetClipboardData(CF_HDROP));
+    if (clipboard_data_handle) {
+      auto clipboard_data =
+          static_cast<DROPFILES*>(GlobalLock(clipboard_data_handle));
+
+      if (clipboard_data) {
+        if (clipboard_data->fWide) {
+          // Unicode
+
+          WCHAR* files = reinterpret_cast<WCHAR*>(
+              reinterpret_cast<char*>(clipboard_data) + clipboard_data->pFiles);
+
+          size_t len = 0;
+          while (true) {
+            if (files[0] == '\0') {
+              result = len;
+              break;
+            }
+
+            if (len >= paths_len) {
+              // user didn't give enough room!
+              result = 0;
+              break;
+            }
+
+            path* p = &paths[len];
+            auto length = wcslen(files);
+            p->wide = clipboard_data->fWide;
+            p->length = length;
+
+            wcscpy_s(p->buf.wide, CLIP_PATH_LENGTH, files);
+
+            files += length + 1;
+            len += 1;
+          }
+
+        } else {
+          // ANSI
+
+          CHAR* files = reinterpret_cast<CHAR*>(
+              reinterpret_cast<char*>(clipboard_data) + clipboard_data->pFiles);
+
+          size_t len = 0;
+          while (true) {
+            if (files[0] == '\0') {
+              result = len;
+              break;
+            }
+
+            if (len >= paths_len) {
+              // user didn't give enough room!
+              result = 0;
+              break;
+            }
+
+            path* p = &paths[len];
+            auto length = strlen(files);
+            p->wide = clipboard_data->fWide;
+            p->length = length;
+
+            strcpy_s(p->buf.ansi, CLIP_PATH_LENGTH, files);
+
+            files += length + 1;
+            len += 1;
+          }
+        }
+      }
+
+      GlobalUnlock(clipboard_data_handle);
+    }
+  }
+
+  return result;
 }
 
 format register_format(const std::string& name) {
