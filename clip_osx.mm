@@ -329,6 +329,10 @@ bool lock::impl::get_image_spec(image_spec& spec) const {
   return get_image_from_clipboard(nullptr, &spec);
 }
 
+size_t lock::impl::get_paths(path* paths, const size_t& paths_len) const {
+  return 0; // TODO
+}
+
 format register_format(const std::string& name) {
   // Check if the format is already registered
   auto it = g_name_to_format.find(name);

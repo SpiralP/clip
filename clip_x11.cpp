@@ -1084,6 +1084,10 @@ bool lock::impl::get_image_spec(image_spec& spec) const {
   return manager->get_image_spec(spec);
 }
 
+size_t lock::impl::get_paths(path* paths, const size_t& paths_len) const {
+  return 0; // TODO
+}
+
 format register_format(const std::string& name) {
   return get_manager()->register_format(name);
 }
