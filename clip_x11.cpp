@@ -19,6 +19,9 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <sstream>
+#include <string>
+#include <string.h>
 #include <thread>
 #include <vector>
 
@@ -1084,8 +1087,77 @@ bool lock::impl::get_image_spec(image_spec& spec) const {
   return manager->get_image_spec(spec);
 }
 
+std::istream& safeGetline(std::istream& is, std::string& t) {
+  t.clear();
+
+  // The characters in the stream are read one-by-one using a std::streambuf.
+  // That is faster than reading them one-by-one using the std::istream.
+  // Code that uses streambuf this way must be guarded by a sentry object.
+  // The sentry object performs various tasks,
+  // such as thread synchronization and updating the stream state.
+
+  std::istream::sentry se(is, true);
+  std::streambuf* sb = is.rdbuf();
+
+  for (;;) {
+    int c = sb->sbumpc();
+    switch (c) {
+      case '\n':
+        return is;
+      case '\r':
+        if (sb->sgetc() == '\n')
+          sb->sbumpc();
+        return is;
+      case std::streambuf::traits_type::eof():
+        // Also handle the case when the last line has no line ending
+        if (t.empty())
+          is.setstate(std::ios::eofbit);
+        return is;
+      default:
+        t += (char)c;
+    }
+  }
+}
+
 size_t lock::impl::get_paths(path* paths, const size_t& paths_len) const {
-  return 0; // TODO
+  if (locked()) {
+    format text_uri_list = register_format("text/uri-list");
+    if (is_convertible(text_uri_list)) {
+      auto length = get_data_length(text_uri_list);
+      if (length > 0) {
+        std::vector<char> buf(length);
+        if (get_data(text_uri_list, &buf[0], length)) {
+          std::string s(buf.begin(), buf.end());
+
+          std::istringstream iss(s);
+          std::string item;
+
+          size_t out_len = 0;
+          while (!safeGetline(iss, item).eof()) {
+            auto length = item.length();
+
+            if (out_len >= paths_len || length >= CLIP_PATH_LENGTH) {
+              // either not enough room in paths
+              // or not enough room in path->buf
+              return 0;
+            }
+
+            auto path = &paths[out_len];
+            path->wide = false;
+            path->length = length;
+
+            strcpy(path->buf.ansi, item.c_str());
+
+            out_len += 1;
+          }
+
+          return out_len;
+        }
+      }
+    }
+  }
+
+  return 0;
 }
 
 format register_format(const std::string& name) {
