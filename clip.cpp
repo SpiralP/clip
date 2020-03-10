@@ -75,6 +75,7 @@ size_t lock::get_paths(path* paths, const size_t& paths_len) const {
 format empty_format() { return 0; }
 format text_format()  { return 1; }
 format image_format() { return 2; }
+format paths_format() { return 3; }
 
 bool has(format f) {
   lock l;

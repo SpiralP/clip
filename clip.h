@@ -89,6 +89,9 @@ namespace clip {
   // When the clipboard has an image.
   format image_format();
 
+  // When the clipboard has file explorer paths.
+  format paths_format();
+
   // Returns true if the clipboard has content of the given type.
   bool has(format f);
 

@@ -105,6 +105,9 @@ bool lock::impl::is_convertible(format f) const {
   else if (f == image_format()) {
     return (IsClipboardFormatAvailable(CF_DIB) ? true: false);
   }
+  else if (f == paths_format()) {
+    return (IsClipboardFormatAvailable(CF_HDROP) ? true: false);
+  }
   else if (IsClipboardFormatAvailable(f))
     return true;
   else
